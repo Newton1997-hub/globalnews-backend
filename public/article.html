@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>GlobalNews Article</title>
+  <meta name="description" content="GlobalNews article">
+
+ <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f7fa;
+      color: #172033;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .article-wrap {
+      max-width: 1000px;
+      margin: 35px auto;
+      padding: 0 20px 70px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      text-decoration: none;
+      color: #2563eb;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .back:hover {
+      text-decoration: underline;
+    }
+
+    .article-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 40px 45px 50px;
+  box-shadow: 0 10px 35px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+
+    .article-body {
+      padding: 40px 45px 50px;
+    }
+
+    .category {
+      display: inline-block;
+      background: #eef4ff;
+      color: #2563eb;
+      padding: 7px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    h1 {
+      font-size: 48px;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin: 0 0 18px;
+    }
+
+    .meta {
+      color: #6b7280;
+      margin-bottom: 30px;
+      font-size: 14px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 20px;
+    }
+
+    .cover {
+      width: 100%;
+      max-height: 560px;
+      object-fit: cover;
+      display: block;
+      border-radius: 14px;
+      margin-bottom: 32px;
+    }
+
+    .excerpt {
+      font-size: 21px;
+      line-height: 1.65;
+      font-weight: 600;
+      color: #374151;
+      margin: 0 0 28px;
+    }
+
+    .content {
+      font-size: 18px;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      color: #1f2937;
+    }
+
+    .error {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    @media (max-width: 700px) {
+      .article-wrap {
+        margin: 18px auto;
+        padding: 0 12px 45px;
+      }
+
+      .article-card {
+        border-radius: 12px;
+      }
+
+      .article-body {
+        padding: 25px 20px 35px;
+      }
+
+      h1 {
+        font-size: 32px;
+        letter-spacing: -.5px;
+      }
+
+      .cover {
+        max-height: 320px;
+        border-radius: 10px;
+      }
+
+      .excerpt {
+        font-size: 18px;
+      }
+
+      .content {
+        font-size: 16px;
+        line-height: 1.8;
+      }
+    }
+
+    .share-btn {
+  display: inline-block;
+  margin-bottom: 25px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.share-btn:hover {
+  opacity: .9;
+}
+  </style>
+</head>
+
+<body>
+
+  <main class="article-wrap">
+
+    <a class="back" href="/">← Back to GlobalNews</a>
+
+    <article class="article-card" id="article">
+      <div class="error">Loading article...</div>
+    </article>
+
+  </main>
+
+<script>
+async function loadArticle() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  if (!id) {
+    document.getElementById('article').innerHTML =
+      '<div class="error"><h2>Article not found</h2><p>No article was selected.</p></div>';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/public/posts');
+    const posts = await response.json();
+
+    const post = posts.find(p => String(p.id) === String(id));
+
+    if (!post) {
+      document.getElementById('article').innerHTML =
+        '<div class="error"><h2>Article not found</h2><p>This article could not be found.</p></div>';
+      return;
+    }
+  const viewKey = 'globalnews_view_' + post.id;
+const lastView = localStorage.getItem(viewKey);
+const now = Date.now();
+const oneDay = 24 * 60 * 60 * 1000;
+
+if (!lastView || now - Number(lastView) >= oneDay) {
+
+  const viewResponse = await fetch('/api/posts/' + post.id + '/view', {
+    method: 'POST'
+  });
+
+  if (viewResponse.ok) {
+    const viewData = await viewResponse.json();
+
+    post.views = viewData.views;
+
+    localStorage.setItem(viewKey, String(now));
+  }
+}
+
+    document.title = post.title + ' - GlobalNews';
+
+    const date = post.published_at
+      ? new Date(post.published_at).toLocaleDateString()
+      : '';
+
+    const image = post.cover_image
+      ? `<img class="cover" src="${post.cover_image}" alt="${post.title}">`
+      : '';
+
+    document.getElementById('article').innerHTML = `
+      <div class="category">${post.category || 'News'}</div>
+
+      <h1>${post.title}</h1>
+<div class="meta">
+  ${post.author ? 'By ' + post.author + ' • ' : ''}
+  ${date}
+  ${post.views !== undefined ? ' • ' + post.views + ' views' : ''}
+</div>
+
+<button class="share-btn" onclick="shareArticle('${post.id}', '${post.title.replace(/'/g, "\\'")}')">
+  ↗ Share Article
+</button>
+
+${image}
+
+      ${post.excerpt ? `<div class="excerpt">${post.excerpt}</div>` : ''}
+
+      <div class="content">${post.content}</div>
+    `;
+
+  } catch (error) {
+    console.error(error);
+
+    document.getElementById('article').innerHTML =
+      '<div class="error"><h2>Unable to load article</h2><p>Please try again.</p></div>';
+  }
+}
+
+async function shareArticle(id, title) {
+
+  const url = window.location.origin + '/article.html?id=' + id;
+
+  if (navigator.share) {
+
+    try {
+      await navigator.share({
+        title: title,
+        text: 'Read this article on GlobalNews',
+        url: url
+      });
+    } catch (error) {
+      console.log('Share cancelled');
+    }
+
+  } else {
+
+    await navigator.clipboard.writeText(url);
+    alert('Article link copied!');
+  }
+}
+
+loadArticle();
+</script>
+
+</body>
+</html>
+```

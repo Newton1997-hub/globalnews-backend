@@ -1,0 +1,75 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Posts - GlobalNews</title><link rel="stylesheet" href="/assets/admin.css"></head><body><div class="shell"><aside class="sidebar"><div class="brand">Global<span>News</span><small>Admin Panel</small></div><nav class="nav"><div class="nav-label">Dashboard</div><a href="/admin/">Dashboard</a><div class="nav-label">Content</div><a class="active" href="/admin/posts.html">Posts</a><a href="/admin/categories.html">Categories</a><div class="nav-label">Users</div><a href="/admin/users.html">Users & Roles</a><div class="nav-label">Settings</div><a href="/admin/settings.html">Settings</a></nav></aside><main class="main"><header class="top"><h1>Posts</h1><input id="search" placeholder="Search posts..." oninput="load()"></header><section class="content"><div class="grid"><div class="card"><div class="head"><h2 id="ft">Create Post</h2><button class="btn secondary" onclick="resetForm()">Clear</button></div><form id="form" class="form"><input type="hidden" id="id"><label>Title<input id="title" required></label><label>Excerpt<textarea id="excerpt" style="min-height:90px"></textarea></label><label>Content<textarea id="content" required></textarea></label><label>Category<select id="category"></select></label>
+    <label>
+  Cover Image
+  <input id="coverImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+</label>
+
+<input id="cover_image" type="hidden"><label>Status<select id="status"><option value="draft">Draft</option><option value="published">Published</option></select></label><label><input id="featured" type="checkbox" style="width:auto"> Featured</label><label><input id="trending" type="checkbox" style="width:auto"> Trending</label><button class="btn">Save Post</button></form></div><div class="card"><div class="head"><h2>All Posts</h2></div><table class="table"><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Views</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div></section></main></div><script src="/assets/admin.js"></script><script>let posts=[];async function cats(){const c=await api('/api/categories');category.innerHTML=c.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}async function load(){posts=await api('/api/posts?q='+encodeURIComponent(search.value));rows.innerHTML=posts.map(p=>`<tr><td>${p.title}</td><td>${p.category_name||'—'}</td><td><span class="pill">${p.status}</span></td><td>${p.views || 0}</td><td><button class="btn secondary" onclick="edit(${p.id})">Edit</button> <button class="btn danger" onclick="del(${p.id})">Delete</button></td></tr>`).join('')}function resetForm(){form.reset();id.value='';ft.textContent='Create Post'}function edit(n){
+    const p=posts.find(x=>x.id===n);
+
+    id.value=p.id;
+    title.value=p.title;
+    excerpt.value=p.excerpt||'';
+    content.value=p.content;
+    category.value=p.category_id||'';
+    document.getElementById('status').value=p.status;
+    featured.checked=!!p.featured;
+    trending.checked=!!p.trending;
+
+    cover_image.value=p.cover_image||'';
+    coverImageFile.value='';
+
+    ft.textContent='Edit Post';
+
+    scrollTo({
+        top:0,
+        behavior:'smooth'
+    });
+}async function del(n){if(confirm('Delete this post?')){await api('/api/posts/'+n,{method:'DELETE'});toast('Deleted');load()}}form.onsubmit=async e=>{
+    e.preventDefault();
+
+    let coverUrl=cover_image.value||'';
+
+    const file=coverImageFile.files[0];
+
+    if(file){
+        const fd=new FormData();
+        fd.append('image',file);
+
+        const uploadResponse=await fetch('/api/media/upload',{
+            method:'POST',
+            body:fd
+        });
+
+        if(!uploadResponse.ok){
+            toast('Image upload failed');
+            return;
+        }
+
+        const uploaded=await uploadResponse.json();
+        coverUrl=uploaded.url;
+    }
+
+    const d={
+        title:title.value,
+        excerpt:excerpt.value,
+        content:content.value,
+        category_id:category.value||null,
+        status:document.getElementById('status').value,
+        featured:featured.checked,
+        trending:trending.checked,
+        cover_image:coverUrl
+    };
+
+    await api(
+        id.value?'/api/posts/'+id.value:'/api/posts',
+        {
+            method:id.value?'PUT':'POST',
+            body:JSON.stringify(d)
+        }
+    );
+
+    toast('Saved');
+    resetForm();
+    load();
+};(async()=>{if(await requireUser()){await cats();await load()}})()</script></body></html>
