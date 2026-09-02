@@ -136,37 +136,70 @@
             margin-bottom: 40px;
         }
 
-        .hero-main {
-            min-height: 380px;
-            background: #111827;
-            color: white;
-            border-radius: 10px;
-            padding: 35px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-        }
+       .hero-main {
+    min-height: 380px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    color: white;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    text-decoration: none;
+    background: #111827;
+}
 
-        .hero-main .category {
-            background: #e11d48;
-            width: fit-content;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
+.hero-main img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
 
-        .hero-main h1 {
-            font-size: 38px;
-            line-height: 1.1;
-            margin-bottom: 12px;
-        }
+.hero-main::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.88),
+        rgba(0, 0, 0, 0.25),
+        rgba(0, 0, 0, 0.05)
+    );
+    z-index: 1;
+}
 
-        .hero-main p {
-            color: #d1d5db;
-            line-height: 1.6;
-        }
+.hero-main .category,
+.hero-main h1,
+.hero-main p {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-main .category {
+    background: #e11d48;
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0 35px 12px;
+}
+
+.hero-main h1 {
+    font-size: 38px;
+    line-height: 1.1;
+    margin: 0 35px 12px;
+}
+
+.hero-main p {
+    color: #e5e7eb;
+    line-height: 1.6;
+    margin: 0 35px 35px;
+}
 
         .hero-side {
             display: flex;
@@ -174,24 +207,46 @@
             gap: 20px;
         }
 
-        .side-card {
-            background: white;
-            padding: 22px;
-            border-radius: 10px;
-            border: 1px solid #e5e7eb;
-        }
+       .side-card {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    display: block;
+}
 
-        .side-card .category {
-            color: #e11d48;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
+.side-card img,
+.side-image-placeholder {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
 
-        .side-card h3 {
-            font-size: 19px;
-            line-height: 1.3;
-        }
+.side-image-placeholder {
+    background: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.side-card-content {
+    padding: 18px 22px 22px;
+}
+
+.side-card .category {
+    color: #e11d48;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.side-card h3 {
+    font-size: 19px;
+    line-height: 1.3;
+    margin: 0;
+}
 
         /* NEWS GRID */
 
@@ -582,63 +637,93 @@
 
         function renderHero(posts) {
 
-            const hero = document.getElementById("hero");
+    const hero = document.getElementById("hero");
 
-            if (!posts.length) {
+    if (!posts.length) {
 
-                hero.innerHTML =
-                    `<div class="message">
-                        No published stories yet.
-                    </div>`;
+        hero.innerHTML =
+            `<div class="message">
+                No published stories yet.
+            </div>`;
 
-                return;
-            }
+        return;
+    }
 
-            const post = posts[0];
+    const post = posts[0];
 
-            hero.innerHTML = `
+    const heroImage = post.cover_image
+        ? `<img
+              src="${escapeHTML(post.cover_image)}"
+              alt="${escapeHTML(post.title)}"
+              loading="eager"
+          >`
+        : `<div class="hero-image-placeholder">📰</div>`;
 
-                <a class="hero-main"
+    hero.innerHTML = `
+
+        <a class="hero-main"
+           href="article.html?id=${post.id}">
+
+            <div class="hero-image">
+                ${heroImage}
+            </div>
+
+            <div class="hero-overlay">
+
+                <div class="category">
+                    ${escapeHTML(post.category || "News")}
+                </div>
+
+                <h1>
+                    ${escapeHTML(post.title)}
+                </h1>
+
+                <p>
+                    ${escapeHTML(post.excerpt || "")}
+                </p>
+
+            </div>
+
+        </a>
+
+        <div class="hero-side">
+
+            ${posts.slice(1, 3).map(post => `
+
+                <a class="side-card"
                    href="article.html?id=${post.id}">
 
-                    <div class="category">
-                        ${escapeHTML(post.category || "News")}
+                    ${
+                        post.cover_image
+                            ? `<img
+                                  src="${escapeHTML(post.cover_image)}"
+                                  alt="${escapeHTML(post.title)}"
+                                  loading="lazy"
+                              >`
+                            : `<div class="side-image-placeholder">📰</div>`
+                    }
+
+                    <div class="side-card-content">
+
+                        <div class="category">
+                            ${escapeHTML(post.category || "News")}
+                        </div>
+
+                        <h3>
+                            ${escapeHTML(post.title)}
+                        </h3>
+
                     </div>
-
-                    <h1>
-                        ${escapeHTML(post.title)}
-                    </h1>
-
-                    <p>
-                        ${escapeHTML(post.excerpt || "")}
-                    </p>
 
                 </a>
 
-                <div class="hero-side">
+            `).join("")}
 
-                    ${posts.slice(1, 3).map(post => `
+        </div>
 
-                        <a class="side-card"
-                           href="article.html?id=${post.id}">
+    `;
 
-                            <div class="category">
-                                ${escapeHTML(post.category || "News")}
-                            </div>
-
-                            <h3>
-                                ${escapeHTML(post.title)}
-                            </h3>
-
-                        </a>
-
-                    `).join("")}
-
-                </div>
-
-            `;
-
-        }
+}
 
 
         function renderLatest(posts) {
@@ -654,11 +739,12 @@ function renderTrending(posts) {
 
     const sorted = [...posts].sort((a, b) => {
 
-        const aTrending = Number(a.trending) === 1 ? 1 : 0;
-        const bTrending = Number(b.trending) === 1 ? 1 : 0;
+       const aTrending = Number(a.trending) === 1 ? 1 : 0;
 
-        if (bTrending !== aTrending) {
-            return bTrending - aTrending;
+const bTrending = Number(b.trending) === 1 ? 1 : 0;
+
+if (bTrending !== aTrending) {
+    return bTrending - aTrending;
         }
 
         const aViews = Number(a.views) || 0;
@@ -696,64 +782,66 @@ function renderTrending(posts) {
         }
 
 
-        function renderCards(posts, elementId) {
+      function renderCards(posts, elementId) {
 
-            const container =
-                document.getElementById(elementId);
+    const container =
+        document.getElementById(elementId);
 
-            if (!posts.length) {
+    if (!posts.length) {
 
-                container.innerHTML =
-                    `<div class="message">
-                        No stories available yet.
-                    </div>`;
+        container.innerHTML =
+            `<div class="message">
+                No stories available yet.
+            </div>`;
 
-                return;
-            }
-
-            container.innerHTML =
-                posts.map(post => `
-
-                    <article class="news-card">
-
-                        <div class="news-image">
-    ${
-        post.cover_image
-            ? `<img src="${escapeHTML(post.cover_image)}" alt="${escapeHTML(post.title)}">`
-            : "📰"
+        return;
     }
-</div>
 
-                        <div class="news-content">
+    container.innerHTML =
+        posts.map(post => `
 
-                            <div class="category">
-                                ${escapeHTML(post.category || "News")}
-                            </div>
+            <a class="news-card"
+               href="article.html?id=${post.id}">
 
-                            <h3>
-                                <a href="article.html?id=${post.id}">
-                                    ${escapeHTML(post.title)}
-                                </a>
-                            </h3>
+                <div class="news-image">
+                    ${
+                        post.cover_image
+                            ? `<img
+                                  src="${escapeHTML(post.cover_image)}"
+                                  alt="${escapeHTML(post.title)}"
+                              >`
+                            : "📰"
+                    }
+                </div>
 
-                            <p>
-                                ${escapeHTML(post.excerpt || "")}
-                            </p>
+                <div class="news-content">
 
-                            <div class="meta">
-                                ${post.author ? escapeHTML(post.author) : "GlobalNews"}
-                                ·
-                                ${formatDate(post.published_at)}
-                            </div>
+                    <div class="category">
+                        ${escapeHTML(post.category || "News")}
+                    </div>
 
-                        </div>
+                    <h3>
+                        ${escapeHTML(post.title)}
+                    </h3>
 
-                    </article>
+                    <p>
+                        ${escapeHTML(post.excerpt || "")}
+                    </p>
 
-                `).join("");
+                    <div class="meta">
+                        ${post.author
+                            ? escapeHTML(post.author)
+                            : "GlobalNews"}
+                        ·
+                        ${formatDate(post.published_at)}
+                    </div>
 
-        }
+                </div>
 
+            </a>
+
+        `).join("");
+}
 
         function formatDate(date) {
 
